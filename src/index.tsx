@@ -18,6 +18,25 @@ app.get('/', (c) => {
       <p class="description">
         엑셀 파일을 업로드하면 고객사별 정산 금액을 자동으로 계산합니다.
       </p>
+      <div class="rate-settings">
+        <h3>정산율 설정</h3>
+        <div class="rate-inputs">
+          <div class="rate-input-item">
+            <label for="rate9">수수료율 9% → 정산율</label>
+            <div class="rate-input-group">
+              <input type="number" id="rate9" value="5" min="0" max="100" step="0.1" />
+              <span>%</span>
+            </div>
+          </div>
+          <div class="rate-input-item">
+            <label for="rate14">수수료율 14% → 정산율</label>
+            <div class="rate-input-group">
+              <input type="number" id="rate14" value="10" min="0" max="100" step="0.1" />
+              <span>%</span>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="upload-section">
         <input type="file" id="fileInput" accept=".xlsx,.xls" />
         <button id="uploadBtn">파일 업로드 및 계산</button>
@@ -52,11 +71,17 @@ app.post('/api/calculate', async (c) => {
     const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
     const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as any[][]
 
-    // 데이터 추출 및 정산 계산
+    // Parse custom rates from form data (percentage values, e.g. 5 → 0.05)
+    const rate9Input = formData.get('rate9')
+    const rate14Input = formData.get('rate14')
+    const customRate9 = rate9Input ? parseFloat(String(rate9Input)) / 100 : 0.05
+    const customRate14 = rate14Input ? parseFloat(String(rate14Input)) / 100 : 0.10
+
     interface SettlementRow {
       매체사: string
       계정명: string
       합계금액: number
+      정산율: number
       정산금액: number
     }
 
@@ -83,25 +108,22 @@ app.post('/api/calculate', async (c) => {
           const K열율 = typeof K열수수료율 === 'number' ? K열수수료율 : parseFloat(String(K열수수료율))
           
           if (!isNaN(금액) && !isNaN(K열율)) {
-            // K열 수수료율에 따라 정산율 결정
-            // K열이 0.09 (9%) → 정산은 5%
-            // K열이 0.14 (14%) → 정산은 10%
             let 정산율: number
             if (Math.abs(K열율 - 0.09) < 0.001) {
-              정산율 = 0.05  // 5%
+              정산율 = customRate9
             } else if (Math.abs(K열율 - 0.14) < 0.001) {
-              정산율 = 0.10  // 10%
+              정산율 = customRate14
             } else {
-              // 예외 케이스: K열이 0.09도 0.14도 아닌 경우 기본 10%
-              정산율 = 0.10
+              정산율 = customRate14
             }
-            
+
             const 정산금액 = 금액 * 정산율
 
             rows.push({
               매체사: 매체사,
               계정명: String(계정명),
               합계금액: 금액,
+              정산율: 정산율,
               정산금액: 정산금액
             })
           }
