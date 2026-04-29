@@ -34,6 +34,64 @@ h1 {
   font-size: 1.1em;
 }
 
+.rate-settings {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px 25px;
+  margin-bottom: 20px;
+}
+
+.rate-settings h3 {
+  color: #444;
+  font-size: 1em;
+  margin-bottom: 15px;
+}
+
+.rate-inputs {
+  display: flex;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+.rate-input-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rate-input-item label {
+  color: #555;
+  font-size: 0.95em;
+  white-space: nowrap;
+}
+
+.rate-input-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rate-input-group input[type="number"] {
+  width: 70px;
+  padding: 6px 10px;
+  font-size: 1em;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.rate-input-group input[type="number"]:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.rate-input-group span {
+  color: #555;
+  font-weight: bold;
+}
+
 .upload-section {
   display: flex;
   gap: 15px;

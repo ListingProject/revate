@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   uploadBtn.addEventListener('click', async () => {
     const file = fileInput.files[0]
-    
+
     if (!file) {
       alert('파일을 선택해주세요.')
       return
@@ -17,6 +17,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!file.name.match(/\.(xlsx|xls)$/i)) {
       alert('엑셀 파일(.xlsx, .xls)만 업로드 가능합니다.')
+      return
+    }
+
+    const rate9 = parseFloat(document.getElementById('rate9').value)
+    const rate14 = parseFloat(document.getElementById('rate14').value)
+
+    if (isNaN(rate9) || rate9 < 0 || rate9 > 100) {
+      alert('수수료율 9% 정산율을 올바르게 입력해주세요. (0~100)')
+      return
+    }
+    if (isNaN(rate14) || rate14 < 0 || rate14 > 100) {
+      alert('수수료율 14% 정산율을 올바르게 입력해주세요. (0~100)')
       return
     }
 
@@ -29,6 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const formData = new FormData()
       formData.append('file', file)
+      formData.append('rate9', rate9.toString())
+      formData.append('rate14', rate14.toString())
 
       const response = await fetch('/api/calculate', {
         method: 'POST',
@@ -53,7 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
   })
 
   function displayResults(data) {
-    // 요약 테이블 표시
     const summaryHTML = `
       <div class="summary-header">
         <h2>정산 계산 결과</h2>
@@ -93,7 +106,6 @@ document.addEventListener('DOMContentLoaded', () => {
     `
     result.innerHTML = summaryHTML
 
-    // 기본적으로 첫 번째 고객사 상세 내역 표시
     if (data.summary.length > 0) {
       showDetails(data.summary[0].계정명)
     }
@@ -105,7 +117,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const account = currentData.summary.find(item => item.계정명 === accountName)
     if (!account) return
 
-    // 활성화된 행 표시
     const rows = document.querySelectorAll('.summary-table tbody tr')
     rows.forEach(row => row.classList.remove('active'))
     const activeRow = Array.from(rows).find(row => 
@@ -113,7 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
     )
     if (activeRow) activeRow.classList.add('active')
 
-    // 상세 내역 표시
     const detailHTML = `
       <div class="detail-card">
         <div class="detail-header">
@@ -131,12 +141,12 @@ document.addEventListener('DOMContentLoaded', () => {
           </thead>
           <tbody>
             ${account.내역.map(detail => {
-              const rate = detail.매체사.includes('네이버 성과형 애드부스트') ? 5 : 10
+              const ratePercent = Math.round(detail.정산율 * 1000) / 10
               return `
                 <tr>
                   <td>${escapeHtml(detail.매체사)}</td>
                   <td>${formatNumber(detail.합계금액)}원</td>
-                  <td><span class="rate-badge rate-${rate}">${rate}%</span></td>
+                  <td><span class="rate-badge" style="${getRateBadgeStyle(ratePercent)}">${ratePercent}%</span></td>
                   <td class="amount">${formatNumber(detail.정산금액)}원</td>
                 </tr>
               `
@@ -160,7 +170,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function formatNumber(num) {
     if (typeof num !== 'number') return '0'
-    // 소숫점 절삭 (Math.floor)
     return Math.floor(num).toLocaleString('ko-KR')
   }
 
@@ -171,13 +180,18 @@ document.addEventListener('DOMContentLoaded', () => {
     return 'rank-other'
   }
 
+  function getRateBadgeStyle(rate) {
+    if (rate <= 5) return 'background:#fff3e0;color:#e65100;'
+    if (rate <= 10) return 'background:#e8f5e9;color:#2e7d32;'
+    return 'background:#e3f2fd;color:#1565c0;'
+  }
+
   function escapeHtml(text) {
     const div = document.createElement('div')
     div.textContent = text
     return div.innerHTML
   }
 
-  // 파일 선택 시 파일명 표시
   fileInput.addEventListener('change', (e) => {
     const fileName = e.target.files[0]?.name
     if (fileName) {
